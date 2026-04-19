@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to create/update (example: v0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-14
+    env:
+      APP_NAME: tmux-bar
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: resolve_tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          if [[ -z "${TAG}" ]]; then
+            echo "Unable to resolve release tag." >&2
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build arm64 app
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B "build/arm64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
+          cmake --build "build/arm64" --parallel
+
+      - name: Build x86_64 app
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B "build/x64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64
+          cmake --build "build/x64" --parallel
+
+      - name: Assemble universal app
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARM_APP="build/arm64/${APP_NAME}.app"
+          X64_APP="build/x64/${APP_NAME}.app"
+          UNIVERSAL_DIR="build/universal"
+          UNIVERSAL_APP="${UNIVERSAL_DIR}/${APP_NAME}.app"
+
+          [[ -d "${ARM_APP}" ]] || { echo "Missing arm64 app: ${ARM_APP}" >&2; exit 1; }
+          [[ -d "${X64_APP}" ]] || { echo "Missing x86_64 app: ${X64_APP}" >&2; exit 1; }
+
+          rm -rf "${UNIVERSAL_DIR}"
+          mkdir -p "${UNIVERSAL_DIR}"
+          cp -R "${ARM_APP}" "${UNIVERSAL_APP}"
+
+          lipo -create \
+            "${ARM_APP}/Contents/MacOS/${APP_NAME}" \
+            "${X64_APP}/Contents/MacOS/${APP_NAME}" \
+            -output "${UNIVERSAL_APP}/Contents/MacOS/${APP_NAME}"
+
+          chmod +x "${UNIVERSAL_APP}/Contents/MacOS/${APP_NAME}"
+
+      - name: Package universal app zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd build/universal
+          ditto -c -k --sequesterRsrc --keepParent "${APP_NAME}.app" "tmux-bar-universal.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tmux-bar-universal
+          path: build/universal/tmux-bar-universal.zip
+
+      - name: Create release if missing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.resolve_tag.outputs.tag }}"
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists."
+          else
+            gh release create "${TAG}" \
+              --title "${TAG}" \
+              --notes "Automated release for ${TAG}"
+          fi
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.resolve_tag.outputs.tag }}"
+          gh release upload "${TAG}" "build/universal/tmux-bar-universal.zip" --clobber

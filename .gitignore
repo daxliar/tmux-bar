@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+
+# Build outputs
+build/
+DerivedData/
+
+# Swift Package / CocoaPods leftovers (safe defaults)
+.build/
+Pods/

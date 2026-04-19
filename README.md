@@ -1,0 +1,155 @@
+<p align="center">
+  <img src="Resources/AppIcon.source.png" alt="tmux-bar" width="128" height="128" />
+</p>
+
+<h1 align="center">tmux-bar</h1>
+
+<p align="center"><strong>Version 1.0.0</strong></p>
+
+`tmux-bar` is a native macOS menu bar agent that shows your tmux windows on the Touch Bar and lets you switch windows with one tap.
+
+## Screenshot
+
+<p align="center">
+  <img src="Resources/screenshot-touch-bar.png" alt="MacBook Pro with tmux windows shown as Touch Bar buttons below the display" width="720" />
+</p>
+
+## Features
+
+- Runs as a background menu bar app (`LSUIElement`), with no Dock icon.
+- Detects the currently focused terminal app.
+- Lists tmux windows for the active/best session.
+- Creates one Touch Bar button per tmux window.
+- Switches tmux windows directly from Touch Bar buttons.
+- Menu bar menu with **Refresh Now** and **Quit**; optional debug snapshot when debug mode is enabled.
+
+## Requirements
+
+- macOS 13 or newer.
+- Mac hardware with Touch Bar support.
+- `tmux` installed (`/opt/homebrew/bin/tmux`, `/usr/local/bin/tmux`, or on `PATH`).
+- Apple Clang (Xcode or Command Line Tools), CMake 3.20 or newer.
+- Python 3 is required **only** when `Resources/AppIcon.icns` is not present (CMake runs `cmake/gen_app_icon.py` to build the icon from `Resources/AppIcon.source.png`, or a placeholder).
+
+## Supported Terminals
+
+`tmux-bar` refreshes while one of these apps is frontmost:
+
+- Terminal (`com.apple.Terminal`)
+- iTerm2 (`com.googlecode.iterm2`)
+- Ghostty (`com.mitchellh.ghostty`)
+
+## Build with CMake
+
+Configure and build a Release app bundle (output path shown is for the default Makefile/Ninja generator):
+
+```bash
+cmake -S . -B build/release -DCMAKE_BUILD_TYPE=Release
+cmake --build build/release --parallel
+```
+
+The generated application is `build/release/tmux-bar.app`.
+
+To produce an `arm64`-only binary on Apple Silicon (optional):
+
+```bash
+cmake -S . -B build/arm64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
+cmake --build build/arm64 --parallel
+```
+
+### Universal binary (arm64 + x86_64)
+
+Build each architecture into its own build directory, copy one of the `.app` bundles, then replace the executable with a `lipo` merge (same approach the release workflow uses):
+
+```bash
+set -euo pipefail
+
+cmake -S . -B build/arm64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
+cmake --build build/arm64 --parallel
+
+cmake -S . -B build/x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64
+cmake --build build/x64 --parallel
+
+APP_NAME="tmux-bar"
+UNIVERSAL_DIR="build/universal"
+UNIVERSAL_APP="${UNIVERSAL_DIR}/${APP_NAME}.app"
+ARM_APP="build/arm64/${APP_NAME}.app"
+X64_APP="build/x64/${APP_NAME}.app"
+
+rm -rf "${UNIVERSAL_DIR}"
+mkdir -p "${UNIVERSAL_DIR}"
+cp -R "${ARM_APP}" "${UNIVERSAL_APP}"
+
+lipo -create \
+  "${ARM_APP}/Contents/MacOS/${APP_NAME}" \
+  "${X64_APP}/Contents/MacOS/${APP_NAME}" \
+  -output "${UNIVERSAL_APP}/Contents/MacOS/${APP_NAME}"
+
+chmod +x "${UNIVERSAL_APP}/Contents/MacOS/${APP_NAME}"
+```
+
+Zip the universal bundle for distribution:
+
+```bash
+cd build/universal
+ditto -c -k --sequesterRsrc --keepParent "tmux-bar.app" "tmux-bar-universal.zip"
+```
+
+### App icon
+
+Put your artwork under **`Resources/`** (see `Resources/README.txt`):
+
+| File | What happens |
+|------|----------------|
+| `Resources/AppIcon.icns` | Used directly in the app bundle (best for a finished icon). No Python step. |
+| `Resources/AppIcon.source.png` | At build time, `cmake/gen_app_icon.py` runs `sips` + `iconutil` to build `AppIcon.icns` from your square PNG (1024×1024 is ideal). |
+| *(neither)* | A temporary solid-color icon is generated. |
+
+After adding or changing an icon, run **`cmake --build`** on your existing build directory (for example **`cmake --build build/release`**). If CMake does not notice a newly added file, reconfigure with **`cmake -S . -B build/release`** first. Remove **`Resources/AppIcon.icns`** if you want to switch back to building from **`AppIcon.source.png`** or the placeholder.
+
+## Run from Source
+
+After building with CMake, open `build/release/tmux-bar.app` (or your chosen build directory) from Finder, or run the executable inside the bundle from a terminal.
+
+The app appears in the macOS status/menu bar as `tmux-bar`.
+
+## Debug Mode
+
+Set `TMUX_BAR_DEBUG=1` in your run environment to enable:
+
+- More status text in the menu bar.
+- A **Log Debug Snapshot** menu action.
+
+## Downloading Releases
+
+Prebuilt binaries are attached to GitHub Releases.
+
+1. Open the [Releases](../../releases) page.
+2. Download the `tmux-bar-universal.zip` asset from the latest version.
+3. Unzip and move `tmux-bar.app` to `Applications` (or another preferred location).
+4. Launch the app.
+
+## Creating a Release (Maintainers)
+
+This repository includes a GitHub Actions workflow that builds and publishes a universal macOS app (`arm64` + `x86_64`) on version tags using CMake, then merges the per-architecture executables with `lipo`.
+
+### Tag-based release
+
+1. Bump `project(tmux-bar VERSION ...)` in `CMakeLists.txt` if needed, commit, then create and push a matching tag (for example for version 1.0.0):
+   - `git tag v1.0.0`
+   - `git push origin v1.0.0`
+2. GitHub Actions builds the app and creates/updates a Release for the tag.
+3. The workflow uploads `tmux-bar-universal.zip` as a downloadable release asset.
+
+### Manual release workflow run
+
+- In GitHub, go to **Actions** → **Release** → **Run workflow**, and provide a tag name (for example `v1.0.0`).
+
+## Notes
+
+- If no tmux session is available, the Touch Bar buttons are hidden.
+- For auto-start at login, add `tmux-bar.app` to macOS Login Items.
+
+## License
+
+MIT License. See [`LICENSE`](LICENSE).
