@@ -4,6 +4,28 @@
 static NSTouchBarItemIdentifier const kSystemTrayIdentifier =
     @"com.daxliar.tmuxbar.tray";
 
+/// Active window gets a per-index vivid bezel; inactive uses nil (default grey).
+static NSColor *TmuxBarBezelColorForWindow(NSInteger index, BOOL active) {
+  if (!active) {
+    return nil;
+  }
+  static NSArray<NSColor *> *vivid = nil;
+  static dispatch_once_t once;
+  dispatch_once(&once, ^{
+    vivid = @[
+        [NSColor colorWithSRGBRed:0.20 green:0.52 blue:0.98 alpha:1.0],  // dev blue
+        [NSColor colorWithSRGBRed:0.98 green:0.72 blue:0.12 alpha:1.0],  // debug gold
+        [NSColor colorWithSRGBRed:0.18 green:0.78 blue:0.58 alpha:1.0],  // log mint
+        [NSColor colorWithSRGBRed:0.72 green:0.38 blue:0.95 alpha:1.0],  // violet
+        [NSColor colorWithSRGBRed:0.98 green:0.42 blue:0.45 alpha:1.0],  // coral
+        [NSColor colorWithSRGBRed:0.35 green:0.82 blue:0.95 alpha:1.0],  // sky
+    ];
+  });
+  NSInteger n = (NSInteger)vivid.count;
+  NSInteger i = ((index % n) + n) % n;
+  return vivid[i];
+}
+
 @interface TouchBarController ()
 
 @property(nonatomic, strong) TmuxClient *tmuxClient;
@@ -74,7 +96,8 @@ static NSTouchBarItemIdentifier const kSystemTrayIdentifier =
                                             target:self
                                             action:@selector(windowButtonTapped:)];
       button.tag = window.index;
-      button.bezelColor = window.isActive ? [NSColor controlAccentColor] : nil;
+      button.bezelColor =
+          TmuxBarBezelColorForWindow(window.index, window.isActive);
       item.view = button;
       return item;
     }
@@ -112,7 +135,8 @@ static NSTouchBarItemIdentifier const kSystemTrayIdentifier =
     button.title = [NSString stringWithFormat:@"%ld:%@", (long)window.index,
                                               window.name];
     button.tag = window.index;
-    button.bezelColor = window.isActive ? [NSColor controlAccentColor] : nil;
+    button.bezelColor =
+        TmuxBarBezelColorForWindow(window.index, window.isActive);
   }
 }
 
