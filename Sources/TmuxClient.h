@@ -9,6 +9,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray<TmuxWindow *> *)listWindows;
 - (nullable NSString *)activeSessionName;
 - (BOOL)selectWindowAtIndex:(NSInteger)windowIndex;
+- (BOOL)createWindowInActiveSession;
+- (BOOL)killWindowAtIndex:(NSInteger)windowIndex;
 
 @end
 

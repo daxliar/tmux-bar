@@ -164,4 +164,48 @@
   return code == 0;
 }
 
+- (BOOL)createWindowInActiveSession {
+  NSString *session = [self resolveBestSessionName];
+  if (session.length == 0) {
+    NSLog(@"[tmux-bar] createWindowInActiveSession: no active session");
+    return NO;
+  }
+  // Use the "=sessionname:" form so tmux treats the target as an exact session
+  // match instead of a fuzzy/window reference. Without the ":" suffix tmux
+  // can, in some states, interpret the argument as "the last window of the
+  // session" which makes a second new-window call after the first succeed
+  // at the tmux protocol level but target the wrong window context.
+  NSString *target = [NSString stringWithFormat:@"=%@:", session];
+  // Inherit the working directory from the currently focused pane, matching
+  // the behaviour of the interactive "prefix + c" shortcut. Without -c tmux
+  // falls back to the session's original start directory (usually "/" for
+  // GUI-launched terminals), which is almost never what the user wants.
+  int code = 0;
+  (void)[self runTmuxWithArguments:@[
+    @"new-window", @"-t", target, @"-c", @"#{pane_current_path}"
+  ]
+                              code:&code];
+  NSLog(@"[tmux-bar] new-window -t %@ -c #{pane_current_path} exit=%d",
+        target, code);
+  return code == 0;
+}
+
+- (BOOL)killWindowAtIndex:(NSInteger)windowIndex {
+  NSString *session = [self resolveBestSessionName];
+  if (session.length == 0) {
+    NSLog(@"[tmux-bar] killWindowAtIndex: no active session");
+    return NO;
+  }
+  // Target the window inside the active session so we never touch windows
+  // that live in another (detached) session that happens to share window
+  // indices. The "=" prefix asks tmux for an exact-name match.
+  NSString *target =
+      [NSString stringWithFormat:@"=%@:%ld", session, (long)windowIndex];
+  int code = 0;
+  (void)[self runTmuxWithArguments:@[ @"kill-window", @"-t", target ]
+                              code:&code];
+  NSLog(@"[tmux-bar] kill-window -t %@ exit=%d", target, code);
+  return code == 0;
+}
+
 @end
