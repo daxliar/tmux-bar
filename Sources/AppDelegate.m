@@ -1,5 +1,6 @@
 #import "AppDelegate.h"
 
+#import "AboutWindowController.h"
 #import "FocusWatcher.h"
 #import "TouchBarController.h"
 #import "TmuxClient.h"
@@ -32,6 +33,10 @@
   self.statusItem.button.toolTip = @"tmux Touch Bar helper";
 
   NSMenu *menu = [[NSMenu alloc] initWithTitle:@"tmux-bar"];
+  [menu addItemWithTitle:@"About tmux-bar"
+                  action:@selector(showAboutPanel)
+           keyEquivalent:@""];
+  [menu addItem:[NSMenuItem separatorItem]];
   [menu addItemWithTitle:@"Refresh Now"
                   action:@selector(refreshState)
            keyEquivalent:@"r"];
@@ -59,6 +64,10 @@
 
 - (void)quitApp {
   [NSApp terminate:nil];
+}
+
+- (void)showAboutPanel {
+  [[AboutWindowController sharedController] showAboutPanel];
 }
 
 - (void)refreshState {

@@ -4,9 +4,15 @@
 
 <h1 align="center">tmux-bar</h1>
 
-<p align="center"><strong>Version 1.0.0</strong></p>
+<p align="center"><strong>Version 1.1.0</strong></p>
 
 `tmux-bar` is a native macOS menu bar agent that shows your tmux windows on the Touch Bar and lets you switch windows with one tap.
+
+## What’s new in 1.1.0
+
+- **About tmux-bar** in the menu bar menu opens a small About window (layout inspired by Ghostty’s About panel): app icon, a short description, and a **Version** / **Build** / **Commit** block.
+- **Build** is the total commit count from git at configure time (`git rev-list --count HEAD`); **Commit** is a short hash (`git rev-parse --short=8 HEAD`). If git metadata is unavailable, sensible placeholders are shown.
+- **README** and **GitHub** buttons open this repository; the commit line is a link to that commit on GitHub when a hash is known.
 
 ## Screenshot
 
@@ -21,7 +27,7 @@
 - Lists tmux windows for the active/best session.
 - Creates one Touch Bar button per tmux window.
 - Switches tmux windows directly from Touch Bar buttons.
-- Menu bar menu with **Refresh Now** and **Quit**; optional debug snapshot when debug mode is enabled.
+- Menu bar menu with **About tmux-bar**, **Refresh Now**, and **Quit**; optional **Log Debug Snapshot** when debug mode is enabled.
 
 ## Requirements
 
@@ -131,19 +137,19 @@ Prebuilt binaries are attached to GitHub Releases.
 
 ## Creating a Release (Maintainers)
 
-This repository includes a GitHub Actions workflow that builds and publishes a universal macOS app (`arm64` + `x86_64`) on version tags using CMake, then merges the per-architecture executables with `lipo`.
+This repository includes a GitHub Actions workflow that builds and publishes a universal macOS app (`arm64` + `x86_64`) on **annotated or lightweight tags whose names start with `v`** (for example `v1.1.0`), using CMake, then merges the per-architecture executables with `lipo`. The marketing version in the app bundle comes from `project(tmux-bar VERSION ...)` in `CMakeLists.txt` and should match that release (for example **1.1.0** for tag **`v1.1.0`**).
 
 ### Tag-based release
 
-1. Bump `project(tmux-bar VERSION ...)` in `CMakeLists.txt` if needed, commit, then create and push a matching tag (for example for version 1.0.0):
-   - `git tag v1.0.0`
-   - `git push origin v1.0.0`
+1. Bump `project(tmux-bar VERSION ...)` in `CMakeLists.txt` if needed, update this README if the user-facing story changed, commit, then create and push a matching tag (for example for app version 1.1.0):
+   - `git tag v1.1.0`
+   - `git push origin v1.1.0`
 2. GitHub Actions builds the app and creates/updates a Release for the tag.
 3. The workflow uploads `tmux-bar-universal.zip` as a downloadable release asset.
 
 ### Manual release workflow run
 
-- In GitHub, go to **Actions** → **Release** → **Run workflow**, and provide a tag name (for example `v1.0.0`).
+- In GitHub, go to **Actions** → **Release** → **Run workflow**, and provide a tag name (for example `v1.1.0`).
 
 ## Notes
 

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(tmux-bar
-  VERSION 1.0.0
+  VERSION 1.1.0
   LANGUAGES C OBJC OBJCXX
 )
 
@@ -18,7 +18,37 @@ set(TMUX_BAR_SOURCES
   Sources/TouchBarController.m
   Sources/TmuxClient.mm
   Sources/Models.m
+  Sources/AboutWindowController.m
 )
+
+# Capture git metadata for the About panel (build number + short commit).
+find_package(Git QUIET)
+set(TMUX_BAR_GIT_COMMIT "unknown")
+set(TMUX_BAR_GIT_BUILD "0")
+if(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" rev-parse --short=8 HEAD
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    OUTPUT_VARIABLE TMUX_BAR_GIT_COMMIT_RAW
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+    RESULT_VARIABLE TMUX_BAR_GIT_COMMIT_RESULT
+  )
+  if(TMUX_BAR_GIT_COMMIT_RESULT EQUAL 0 AND TMUX_BAR_GIT_COMMIT_RAW)
+    set(TMUX_BAR_GIT_COMMIT "${TMUX_BAR_GIT_COMMIT_RAW}")
+  endif()
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" rev-list --count HEAD
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    OUTPUT_VARIABLE TMUX_BAR_GIT_BUILD_RAW
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+    RESULT_VARIABLE TMUX_BAR_GIT_BUILD_RESULT
+  )
+  if(TMUX_BAR_GIT_BUILD_RESULT EQUAL 0 AND TMUX_BAR_GIT_BUILD_RAW)
+    set(TMUX_BAR_GIT_BUILD "${TMUX_BAR_GIT_BUILD_RAW}")
+  endif()
+endif()
 
 set(TMUX_BAR_COMMITTED_ICNS "${CMAKE_CURRENT_SOURCE_DIR}/Resources/AppIcon.icns")
 set(TMUX_BAR_SOURCE_PNG "${CMAKE_CURRENT_SOURCE_DIR}/Resources/AppIcon.source.png")
@@ -86,6 +116,12 @@ set_target_properties(tmux-bar PROPERTIES
 )
 
 target_include_directories(tmux-bar PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Sources")
+
+target_compile_definitions(tmux-bar PRIVATE
+  "TMUX_BAR_VERSION=\"${PROJECT_VERSION}\""
+  "TMUX_BAR_BUILD=\"${TMUX_BAR_GIT_BUILD}\""
+  "TMUX_BAR_COMMIT=\"${TMUX_BAR_GIT_COMMIT}\""
+)
 
 target_link_libraries(tmux-bar PRIVATE
   "-framework Cocoa"
