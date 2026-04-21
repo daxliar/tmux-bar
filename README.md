@@ -8,12 +8,6 @@
 
 `tmux-bar` is a native macOS menu bar agent that shows your tmux windows on the Touch Bar and lets you switch windows with one tap.
 
-## What’s new in 1.1.0
-
-- **About tmux-bar** in the menu bar menu opens a small About window (layout inspired by Ghostty’s About panel): app icon, a short description, and a **Version** / **Build** / **Commit** block.
-- **Build** is the total commit count from git at configure time (`git rev-list --count HEAD`); **Commit** is a short hash (`git rev-parse --short=8 HEAD`). If git metadata is unavailable, sensible placeholders are shown.
-- **README** and **GitHub** buttons open this repository; the commit line is a link to that commit on GitHub when a hash is known.
-
 ## Screenshot
 
 <p align="center">
@@ -22,12 +16,14 @@
 
 ## Features
 
-- Runs as a background menu bar app (`LSUIElement`), with no Dock icon.
-- Detects the currently focused terminal app.
-- Lists tmux windows for the active/best session.
-- Creates one Touch Bar button per tmux window.
-- Switches tmux windows directly from Touch Bar buttons.
-- Menu bar menu with **About tmux-bar**, **Refresh Now**, and **Quit**; optional **Log Debug Snapshot** when debug mode is enabled.
+- Runs quietly from the **menu bar** only (no Dock icon).
+- When **Terminal**, **iTerm2**, or **Ghostty** is the frontmost app and you’re in tmux, your **windows appear on the Touch Bar**; tap one to **switch** to that window.
+- The **current window** is easy to spot (**brighter colored** outline than the rest).
+- Lots of windows? **Swipe** the window row sideways; **+** (new window) and **trash** (delete) stay on the right.
+- **+** opens a **new tmux window** in the **same folder** as the shell you’re in.
+- **Trash** turns on **delete mode** (buttons show an **✕**); tap a window to **close** it. Delete mode turns **off after each tap** so you don’t remove windows by accident.
+- If you switch to another app or tmux isn’t in use, the Touch Bar **goes away** so you don’t see old labels.
+- The menu bar title can show your **session name and how many windows** you have while tmux is active.
 
 ## Requirements
 
@@ -44,6 +40,12 @@
 - Terminal (`com.apple.Terminal`)
 - iTerm2 (`com.googlecode.iterm2`)
 - Ghostty (`com.mitchellh.ghostty`)
+
+## What’s new in 1.1.0
+
+- **About tmux-bar** in the menu bar menu opens a small About window (layout inspired by Ghostty’s About panel): app icon, a short description, and a **Version** / **Build** / **Commit** block.
+- **Build** is the total commit count from git at configure time (`git rev-list --count HEAD`); **Commit** is a short hash (`git rev-parse --short=8 HEAD`). If git metadata is unavailable, sensible placeholders are shown.
+- **README** and **GitHub** buttons open this repository; the commit line is a link to that commit on GitHub when a hash is known.
 
 ## Build with CMake
 
