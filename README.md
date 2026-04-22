@@ -6,7 +6,7 @@
 
 <p align="center"><strong>Version 1.1.0</strong></p>
 
-`tmux-bar` is a native macOS menu bar agent that shows your tmux windows on the Touch Bar and lets you switch windows with one tap.
+`tmux-bar` is a macOS menu bar app that shows your tmux windows on the Touch Bar and lets you switch windows with one tap.
 
 ## Screenshot
 
@@ -123,7 +123,7 @@ The app appears in the macOS status/menu bar as `tmux-bar`.
 
 ## Debug Mode
 
-Set `TMUX_BAR_DEBUG=1` in your run environment to enable:
+Set `TMUX_BAR_DEBUG` (to any value) in your run environment to enable:
 
 - More status text in the menu bar.
 - A **Log Debug Snapshot** menu action.
@@ -136,22 +136,6 @@ Prebuilt binaries are attached to GitHub Releases.
 2. Download the `tmux-bar-universal.zip` asset from the latest version.
 3. Unzip and move `tmux-bar.app` to `Applications` (or another preferred location).
 4. Launch the app.
-
-## Creating a Release (Maintainers)
-
-This repository includes a GitHub Actions workflow that builds and publishes a universal macOS app (`arm64` + `x86_64`) on **annotated or lightweight tags whose names start with `v`** (for example `v1.1.0`), using CMake, then merges the per-architecture executables with `lipo`. The marketing version in the app bundle comes from `project(tmux-bar VERSION ...)` in `CMakeLists.txt` and should match that release (for example **1.1.0** for tag **`v1.1.0`**).
-
-### Tag-based release
-
-1. Bump `project(tmux-bar VERSION ...)` in `CMakeLists.txt` if needed, update this README if the user-facing story changed, commit, then create and push a matching tag (for example for app version 1.1.0):
-   - `git tag v1.1.0`
-   - `git push origin v1.1.0`
-2. GitHub Actions builds the app and creates/updates a Release for the tag.
-3. The workflow uploads `tmux-bar-universal.zip` as a downloadable release asset.
-
-### Manual release workflow run
-
-- In GitHub, go to **Actions** → **Release** → **Run workflow**, and provide a tag name (for example `v1.1.0`).
 
 ## Notes
 
